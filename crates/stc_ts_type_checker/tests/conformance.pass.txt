@@ -2329,6 +2329,8 @@ types/forAwait/types.forAwait.es2018.2.ts
 types/forAwait/types.forAwait.es2018.3.ts
 types/import/importTypeAmbientMissing.ts
 types/import/importTypeAmdBundleRewrite.ts
+types/import/importTypeGenericTypes.ts
+types/import/importTypeLocal.ts
 types/intersection/contextualIntersectionType.ts
 types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
 types/intersection/intersectionNarrowing.ts

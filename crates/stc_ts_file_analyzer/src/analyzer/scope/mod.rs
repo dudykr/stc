@@ -1220,6 +1220,12 @@ impl Analyzer<'_, '_> {
             }
         }
 
+        self.find_local_type_without_this(name)
+    }
+
+    fn find_local_type_without_this(&self, name: &Id) -> Option<ItemRef<Type>> {
+        let _tracing = dev_span!("find_local_type_without_this", name = tracing::field::debug(name));
+
         if cfg!(debug_assertions) {
             debug!("({}) Scope.find_type(`{}`)", self.scope.depth(), name);
         }
@@ -2064,6 +2070,7 @@ impl Expander<'_, '_, '_> {
         type_args: Option<&TypeParamInstantiation>,
         was_top_level: bool,
         trying_primitive_expansion: bool,
+        ignore_this: bool,
     ) -> VResult<Option<Type>> {
         macro_rules! verify {
             ($ty:expr) => {{
@@ -2080,26 +2087,19 @@ impl Expander<'_, '_, '_> {
 
         match type_name {
             RTsEntityName::Ident(ref i) => {
-                if let Some(class) = &self.analyzer.scope.get_this_class_name() {
-                    if *class == *i {
-                        return Ok(Some(Type::This(ThisType {
-                            span,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        })));
-                    }
-                }
-                if i.sym == js_word!("void") {
-                    return Ok(Some(Type::any(span, Default::default())));
-                }
-
                 info!("Info: {}{:?}", i.sym, i.span.ctxt);
                 if !trying_primitive_expansion && self.dejavu.contains(&i.into()) {
                     error!("Dejavu: {}{:?}", &i.sym, i.span.ctxt);
                     return Ok(None);
                 }
 
-                if let Some(types) = self.analyzer.find_type(&i.into())? {
+                let tys = if ignore_this {
+                    self.analyzer.find_local_type_without_this(&i.into())
+                } else {
+                    self.analyzer.find_type(&i.into())?
+                };
+
+                if let Some(types) = tys {
                     info!("expand: expanding `{}` using analyzer: {}", Id::from(i), types.clone().count());
 
                     let mut stored_ref = None;
@@ -2247,6 +2247,16 @@ impl Expander<'_, '_, '_> {
 
                             Type::Mapped(m) => {}
 
+                            Type::Namespace(..) => {
+                                dbg!(&t);
+                                return Ok(Some(t.into_owned()));
+                            }
+
+                            Type::StaticThis(..) => {
+                                dbg!(&t);
+
+                                stored_ref = Some(t)
+                            }
                             _ => stored_ref = Some(t),
                         }
                     }
@@ -2258,7 +2268,7 @@ impl Expander<'_, '_, '_> {
                     }
                 }
 
-                if i.sym == *"undefined" || i.sym == *"null" {
+                if i.sym == *"undefined" || i.sym == *"null" || i.sym == *"void" {
                     return Ok(Some(Type::any(span, Default::default())));
                 }
 
@@ -2269,14 +2279,13 @@ impl Expander<'_, '_, '_> {
             //
             //  let a: StringEnum.Foo = x;
             RTsEntityName::TsQualifiedName(box RTsQualifiedName { left, ref right, .. }) => {
-                let left = self.expand_ts_entity_name(span, left, None, was_top_level, trying_primitive_expansion)?;
-
-                if let Some(left) = &left {
-                    let ty = self
+                let left_ty = self.expand_ts_entity_name(span, left, None, was_top_level, trying_primitive_expansion, false)?;
+                if let Some(ty) = &left_ty {
+                    let res = match self
                         .analyzer
                         .access_property(
                             span,
-                            left,
+                            ty,
                             &Key::Normal {
                                 span,
                                 sym: right.sym.clone(),
@@ -2286,9 +2295,33 @@ impl Expander<'_, '_, '_> {
                             Default::default(),
                         )
                         .context("tried to access property as a part of type expansion")
-                        .report(&mut self.analyzer.storage)
-                        .unwrap_or_else(|| Type::any(span, Default::default()));
-                    return Ok(Some(ty));
+                    {
+                        Ok(t) => Some(t),
+                        err => {
+                            if let Some(left) =
+                                self.expand_ts_entity_name(span, left, None, was_top_level, trying_primitive_expansion, true)?
+                            {
+                                self.analyzer
+                                    .access_property(
+                                        span,
+                                        &left,
+                                        &Key::Normal {
+                                            span,
+                                            sym: right.sym.clone(),
+                                        },
+                                        TypeOfMode::RValue,
+                                        IdCtx::Type,
+                                        Default::default(),
+                                    )
+                                    .context("tried to access property as a part of type expansion")
+                                    .report(&mut self.analyzer.storage)
+                            } else {
+                                None
+                            }
+                        }
+                    };
+
+                    return Ok(res.or_else(|| Some(Type::any(span, Default::default()))));
                 }
             }
         }
@@ -2313,7 +2346,14 @@ impl Expander<'_, '_, '_> {
             return Ok(None);
         }
 
-        let mut ty = self.expand_ts_entity_name(span, &type_name, type_args.as_deref(), was_top_level, trying_primitive_expansion)?;
+        let mut ty = self.expand_ts_entity_name(
+            span,
+            &type_name,
+            type_args.as_deref(),
+            was_top_level,
+            trying_primitive_expansion,
+            false,
+        )?;
 
         if let Some(ty) = &mut ty {
             ty.reposition(r_span);

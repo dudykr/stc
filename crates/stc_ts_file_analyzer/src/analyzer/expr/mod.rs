@@ -3035,9 +3035,9 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Module(ty::Module { name, ref exports, .. }) => {
-                match id_ctx {
-                    IdCtx::Type => {
-                        if let Key::Normal { sym, .. } = prop {
+                if let Key::Normal { sym, .. } = prop {
+                    match id_ctx {
+                        IdCtx::Type => {
                             if let Some(types) = exports.types.get(sym).cloned() {
                                 if types.len() == 1 {
                                     return Ok(types.into_iter().next().unwrap());
@@ -3053,16 +3053,22 @@ impl Analyzer<'_, '_> {
                             if let Some(vars) = exports.vars.get(sym).cloned() {
                                 return Ok(vars);
                             }
+
+                            for (id, tys) in exports.private_types.iter() {
+                                if id.sym().eq(sym) {
+                                    for ty in tys.iter() {
+                                        if ty.is_module() || ty.is_interface() {
+                                            return Ok(ty.clone());
+                                        }
+                                    }
+                                }
+                            }
                         }
-                    }
-                    IdCtx::Var => {
-                        if let Key::Normal { sym, .. } = prop {
+                        IdCtx::Var => {
                             if let Some(item) = exports.vars.get(sym) {
                                 return Ok(item.clone());
                             }
-                        }
 
-                        if let Key::Normal { sym, .. } = prop {
                             if let Some(types) = exports.types.get(sym) {
                                 for ty in types.iter() {
                                     if ty.is_module() || ty.is_interface() {
