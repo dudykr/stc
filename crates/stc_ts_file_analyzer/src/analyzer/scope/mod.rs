@@ -2094,7 +2094,12 @@ impl Expander<'_, '_, '_> {
                 }
 
                 let tys = if ignore_this {
-                    self.analyzer.find_local_type_without_this(&i.into())
+                    let res = self.analyzer.find_local_type_without_this(&i.into());
+                    if res.is_some() {
+                        res
+                    } else {
+                        self.analyzer.find_type(&i.into())?
+                    }
                 } else {
                     self.analyzer.find_type(&i.into())?
                 };
