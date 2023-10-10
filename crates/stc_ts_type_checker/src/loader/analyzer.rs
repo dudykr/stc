@@ -18,8 +18,6 @@ where
 
     m.visit_with(&mut v);
 
-    v.references.dedup();
-
     (v.declared_modules, v.references, v.deps)
 }
 
