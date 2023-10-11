@@ -1016,10 +1016,14 @@ es6/spread/iteratorSpreadInCall2.ts
 es6/spread/iteratorSpreadInCall3.ts
 es6/spread/iteratorSpreadInCall4.ts
 es6/spread/iteratorSpreadInCall5.ts
+es6/tedirectives/ts-expect-error-nocheck.ts
+es6/templates/taggedTemplateStrindirectives/ts-expect-error-nocheck.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes01_ES6.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02.ts
 es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02_ES6.ts
+es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02_ES6.tsdirectives/ts-expect-error-nocheck.ts
+es6/templates/taggedTemplateStringsPlainCharactersThatArePartsOfEscapes02directives/ts-expect-error-nocheck.ts
 es6/templates/taggedTemplateStringsPldirectives/ts-expect-error-nocheck.ts
 es6/templates/taggedTemplateStringsWithIncompatibleTypedTags.ts
 es6/templates/taggedTemplateStringsWithIncompatibleTypedTagsES6.ts
@@ -1123,6 +1127,8 @@ es6/templates/templateStringWhitespaceEscapes2_ES6.ts
 es6/templates/templateStringWithBackslashEscapes01.ts
 es6/templates/templateStringWithBackslashEscapes01_ES6.ts
 es6/templates/templateStringWithCommentsInArrowFunction.ts
+es6/templates/templateStringWithE
+es6/templates/templateStringWithEdirectives/ts-expect-error-nocheck.ts
 es6/templates/templateStringWithEmbeddedAddition.ts
 es6/templates/templateStringWithEmbeddedAdditionES6.ts
 es6/templates/templateStringWithEmbeddedArray.ts
@@ -1163,6 +1169,7 @@ es6/templates/templateStringWithEmptyLiteralPortions.ts
 es6/templates/templateStringWithEmptyLiteralPortionsES6.ts
 es6/templates/templateStringWithOpenCommentInStringPortion.ts
 es6/templates/templateStringWithOpenCommentInStringPortionES6.ts
+es6/templates/templateStringWithPdirectives/ts-expect-error-nocheck.ts
 es6/templates/templateStringWithPropertyAccess.ts
 es6/templates/templateStringWithPropertyAccessES6.ts
 es6/templates/templateStringsWithTypeErrorInFunctionExpressionsInSubstitutionExpression.ts
@@ -1683,6 +1690,7 @@ externalModules/exportAssignImportedIdentifier.ts
 externalModules/exportAssignTypes.ts
 externalModules/exportAssignmentAndDeclaration.ts
 externalModules/exportAssignmentGenericType.ts
+externalModules/exportAssignmentOfExportNamespaceWithDefault.ts
 externalModules/exportAssignmentTopLevelIdentifier.ts
 externalModules/exportClassNameWithObjectAMD.ts
 externalModules/exportClassNameWithObjectCommonJS.ts
@@ -2199,8 +2207,14 @@ parser/ecmascript6/Symbols/parserSymbolProperty6.ts
 parser/ecmascript6/Symbols/parserSymbolProperty7.ts
 parser/ecmascript6/Symbols/parserSymbolProperty8.ts
 parser/ecmascript6/Symbols/parserSymbolProperty9.ts
+references/library-reference-1.ts
 references/library-reference-14.ts
+references/library-reference-3.ts
+references/library-reference-4.ts
 references/library-reference-6.ts
+references/library-reference-7.ts
+references/library-reference-8.ts
+references/library-reference-scoped-packages.ts
 salsa/constructorNameInObjectLiteralAccessor.ts
 salsa/inferringClassMembersFromAssignments8.ts
 salsa/mixedPropertyElementAccessAssignmentDeclaration.ts
@@ -2327,7 +2341,6 @@ types/contextualTypes/partiallyAnnotatedFunction/partiallyAnnotatedFunctionWitou
 types/forAwait/types.forAwait.es2018.1.ts
 types/forAwait/types.forAwait.es2018.2.ts
 types/forAwait/types.forAwait.es2018.3.ts
-types/import/importTypeAmbientMissing.ts
 types/import/importTypeAmdBundleRewrite.ts
 types/intersection/contextualIntersectionType.ts
 types/intersection/intersectionMemberOfUnionNarrowsCorrectly.ts
