@@ -32,6 +32,8 @@ impl Analyzer<'_, '_> {
         let dep_id = match dep_id {
             Some(v) => v,
             None => {
+                dbg!(&base, &dst);
+
                 self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
                 return (ctxt, Type::any(span, Default::default()));
@@ -40,12 +42,14 @@ impl Analyzer<'_, '_> {
         let data = match self.data.imports.get(&(ctxt, dep_id)).cloned() {
             Some(v) => v,
             None => {
+                dbg!(&base, &dst, &dep_id);
+
                 self.storage.report(ErrorKind::ModuleNotFound { span }.into());
 
                 return (ctxt, Type::any(span, Default::default()));
             }
         };
-
+        dbg!(&dep_id, &data);
         (dep_id, data)
     }
 
@@ -79,20 +83,32 @@ impl Analyzer<'_, '_> {
         if self.config.is_builtin {
             return;
         }
+        let loader = self.loader;
 
         #[inline]
         fn is_relative_path(path: &str) -> bool {
             path.starts_with("./") || path.starts_with("../")
         }
+        dbg!(&module_spans);
         // We first load non-circular imports.
-        let imports = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, items);
+        let (imports, reference) = ImportFinder::find_imports(&self.comments, module_spans, &self.storage, items);
 
-        let loader = self.loader;
+        // {
+        //     let current_ctxt = self.ctx.module_id;
+        //     let base = self.storage.path(current_ctxt);
+
+        //     for (ctxt, src) in reference {
+        //         let _ = loader.load_non_circular_dep(&base, &src);
+        //     }
+        // }
+
+        dbg!(&reference, &imports);
         let mut normal_imports = vec![];
         for (ctxt, import) in imports {
+            dbg!(&ctxt, &import);
             let span = import.span;
             let base = self.storage.path(ctxt);
-            let dep_id = self.loader.module_id(&base, &import.src);
+            let dep_id = loader.module_id(&base, &import.src);
             let dep_id = match dep_id {
                 Some(v) => v,
                 _ if !is_relative_path(&import.src) => {
@@ -110,7 +126,8 @@ impl Analyzer<'_, '_> {
 
             normal_imports.push((ctxt, base.clone(), dep_id, import.src.clone(), import));
         }
-
+        dbg!(&normal_imports);
+        dbg!("end!");
         let import_results = if cfg!(feature = "no-threading") {
             let iter = normal_imports.into_iter();
 
@@ -294,6 +311,7 @@ where
     cur_ctxt: ModuleId,
     to: Vec<(ModuleId, DepInfo)>,
     comments: C,
+    references: Vec<(ModuleId, JsWord)>,
 }
 
 impl<'a, C> ImportFinder<'a, C>
@@ -308,11 +326,17 @@ where
         let ctxt = self.cur_ctxt;
         let deps = find_imports_in_comments(&self.comments, span);
 
+        self.references.extend(deps.clone().into_iter().map(|i| (ctxt, i.to_path())));
         self.to
             .extend(deps.into_iter().map(|src| (ctxt, DepInfo { span, src: src.to_path() })));
     }
 
-    pub fn find_imports<T>(comments: C, module_span: Vec<(ModuleId, Span)>, storage: &'a Storage<'a>, node: &T) -> Vec<(ModuleId, DepInfo)>
+    pub fn find_imports<T>(
+        comments: C,
+        module_span: Vec<(ModuleId, Span)>,
+        storage: &'a Storage<'a>,
+        node: &T,
+    ) -> (Vec<(ModuleId, DepInfo)>, Vec<(ModuleId, JsWord)>)
     where
         T: for<'any> VisitWith<ImportFinder<'any, C>>,
     {
@@ -321,6 +345,7 @@ where
             storage,
             to: Default::default(),
             cur_ctxt: ModuleId::builtin(),
+            references: Default::default(),
         };
 
         for (ctxt, span) in module_span {
@@ -332,7 +357,7 @@ where
 
         node.visit_with(&mut v);
 
-        v.to
+        (v.to, v.references)
     }
 }
 

@@ -11,7 +11,10 @@ use rnode::{NodeIdGenerator, RNode, VisitWith};
 use stc_ts_ast_rnode::{RModule, RStr, RTsModuleName};
 use stc_ts_dts::{apply_mutations, cleanup_module_for_dts};
 use stc_ts_env::Env;
-use stc_ts_errors::{debug::debugger::Debugger, Error};
+use stc_ts_errors::{
+    debug::{debugger::Debugger, print_backtrace},
+    Error,
+};
 use stc_ts_file_analyzer::{analyzer::Analyzer, loader::Load, validator::ValidateWith, ModuleTypeData, VResult};
 use stc_ts_storage::{ErrorStore, File, Group, Single};
 use stc_ts_types::{ModuleId, Type};
@@ -389,7 +392,8 @@ impl Load for Checker {
 
     fn declare_module(&self, name: &JsWord, module: Type) -> ModuleId {
         module.assert_clone_cheap();
-
+        dbg!(&name, &module);
+        print_backtrace();
         let module_id = self
             .module_loader
             .load_module(&Arc::new(FileName::Custom(name.to_string())), false)
