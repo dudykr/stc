@@ -3055,7 +3055,7 @@ impl Analyzer<'_, '_> {
                             }
 
                             for (id, tys) in exports.private_types.iter() {
-                                if id.sym().eq(sym) {
+                                if *id.sym() == *sym {
                                     for ty in tys.iter() {
                                         if ty.is_module() || ty.is_interface() {
                                             return Ok(ty.clone());
