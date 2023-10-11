@@ -1,14 +1,7 @@
 {
   "required_errors": {},
   "required_error_lines": {},
-  "extra_errors": {
-    "TS2307": 3
-  },
-  "extra_error_lines": {
-    "TS2307": [
-      10,
-      33,
-      40
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {},
+  "extra_error_lines": {}
 }
