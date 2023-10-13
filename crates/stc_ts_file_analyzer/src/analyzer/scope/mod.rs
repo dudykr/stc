@@ -2275,49 +2275,29 @@ impl Expander<'_, '_, '_> {
             //
             //  let a: StringEnum.Foo = x;
             RTsEntityName::TsQualifiedName(box RTsQualifiedName { left, ref right, .. }) => {
-                let left_ty = self.expand_ts_entity_name(span, left, None, was_top_level, trying_primitive_expansion, false)?;
-                if let Some(ty) = &left_ty {
-                    let res = match self
+                let prop = Key::Normal {
+                    span,
+                    sym: right.sym.clone(),
+                };
+                if let Some(ty) = self.expand_ts_entity_name(span, left, None, was_top_level, trying_primitive_expansion, false)? {
+                    match self
                         .analyzer
-                        .access_property(
-                            span,
-                            ty,
-                            &Key::Normal {
-                                span,
-                                sym: right.sym.clone(),
-                            },
-                            TypeOfMode::RValue,
-                            IdCtx::Type,
-                            Default::default(),
-                        )
+                        .access_property(span, &ty, &prop, TypeOfMode::RValue, IdCtx::Type, Default::default())
                         .context("tried to access property as a part of type expansion")
                     {
-                        Ok(t) => Some(t),
+                        Ok(t) => return Ok(Some(t)),
                         err => {
                             if let Some(left) =
                                 self.expand_ts_entity_name(span, left, None, was_top_level, trying_primitive_expansion, true)?
                             {
-                                self.analyzer
-                                    .access_property(
-                                        span,
-                                        &left,
-                                        &Key::Normal {
-                                            span,
-                                            sym: right.sym.clone(),
-                                        },
-                                        TypeOfMode::RValue,
-                                        IdCtx::Type,
-                                        Default::default(),
-                                    )
-                                    .context("tried to access property as a part of type expansion")
-                                    .report(&mut self.analyzer.storage)
-                            } else {
-                                None
+                                return Ok(self
+                                    .analyzer
+                                    .access_property(span, &left, &prop, TypeOfMode::RValue, IdCtx::Type, Default::default())
+                                    .context("tried to access property as a part of type expansion(retry without this type)")
+                                    .report(&mut self.analyzer.storage));
                             }
                         }
                     };
-
-                    return Ok(res.or_else(|| Some(Type::any(span, Default::default()))));
                 }
             }
         }
