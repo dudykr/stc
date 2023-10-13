@@ -2094,15 +2094,11 @@ impl Expander<'_, '_, '_> {
                 }
 
                 let tys = if ignore_this {
-                    let res = self.analyzer.find_local_type_without_this(&i.into());
-                    if res.is_some() {
-                        res
-                    } else {
-                        self.analyzer.find_type(&i.into())?
-                    }
+                    self.analyzer.find_local_type_without_this(&i.into())
                 } else {
-                    self.analyzer.find_type(&i.into())?
-                };
+                    None
+                }
+                .map_or_else(|| self.analyzer.find_type(&i.into()), |res| Ok(Some(res)))?;
 
                 if let Some(types) = tys {
                     info!("expand: expanding `{}` using analyzer: {}", Id::from(i), types.clone().count());
