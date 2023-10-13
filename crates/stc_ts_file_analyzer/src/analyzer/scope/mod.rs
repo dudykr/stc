@@ -2253,15 +2253,10 @@ impl Expander<'_, '_, '_> {
                             Type::Mapped(m) => {}
 
                             Type::Namespace(..) => {
-                                dbg!(&t);
                                 return Ok(Some(t.into_owned()));
                             }
 
-                            Type::StaticThis(..) => {
-                                dbg!(&t);
-
-                                stored_ref = Some(t)
-                            }
+                            Type::StaticThis(..) => stored_ref = Some(t),
                             _ => stored_ref = Some(t),
                         }
                     }
