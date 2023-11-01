@@ -106,6 +106,7 @@
     "vite",
     "walkdir",
     "wasi",
+    "xtask",
     "Zunstable"
   ],
   "ignorePaths": [
