@@ -12,6 +12,7 @@ use crate::{
 /// Command builder for running tests/base.rs
 pub struct TestBaseArgs<'a> {
     inner: CargoTestArgs<'a>,
+    update: bool,
     ignored: bool,
 }
 
@@ -20,6 +21,7 @@ impl<'a> TestBaseArgs<'a> {
     pub fn new() -> Self {
         Self {
             inner: CargoTestArgs::new("stc_ts_file_analyzer").with_test("base").with_lib(true),
+            update: true,
             ignored: false,
         }
     }
@@ -60,6 +62,13 @@ impl<'a> TestBaseArgs<'a> {
         self
     }
 
+    /// Whether to set UPDATE=1 environment variable
+    #[must_use]
+    pub fn with_update(mut self, value: bool) -> Self {
+        self.update = value;
+        self
+    }
+
     /// Set the standard --fast options.
     #[must_use]
     pub fn fast(self) -> Self {
@@ -70,7 +79,11 @@ impl<'a> TestBaseArgs<'a> {
     pub fn to_command(&self) -> std::process::Command {
         let mut cmd = self.inner.to_command();
 
-        cmd.env("UPDATE", "1").arg("--").arg("-Zunstable-options").arg("--report-time");
+        if self.update {
+            cmd.env("UPDATE", "1");
+        }
+
+        cmd.arg("--").arg("-Zunstable-options").arg("--report-time");
 
         if self.ignored {
             cmd.arg("--ignored");
@@ -110,6 +123,7 @@ pub fn auto_unignore() -> anyhow::Result<()> {
     let _ = TestBaseArgs::new()
         .with_log_max_level(LogFilterLevel::Off)
         .with_lib(false)
+        .with_update(false)
         .with_ignored()
         .run();
 
