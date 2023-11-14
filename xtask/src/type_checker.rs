@@ -43,26 +43,27 @@ fn test_conformance() -> anyhow::Result<()> {
     // This is more complicated than using .output(), but there's a *lot* of
     // output we throw out, so this is much better for memory. You could also use it
     // for reporting progress, I guess?
-    let mut tests = Vec::new();
+    let mut passed_test_lines = Vec::new();
     let stdout = child.stdout.take().unwrap();
     std::thread::scope({
         // Avoid moving the Vec into the thread
-        let tests = &mut tests;
+        let passed_test_lines = &mut passed_test_lines;
         move |scope| {
             scope.spawn(move || {
                 use std::io::BufRead;
                 let stdout = std::io::BufReader::new(stdout);
                 for line in stdout.lines() {
-                    let line = line.unwrap();
+                    let mut line = line.unwrap();
                     // fixme: there are some .tsx files...?
                     if line.ends_with(".ts ... ok") {
-                        tests.push(
-                            line.replace("test conformance::", "")
-                                .replace(" ... ok", "")
-                                .replace("::", "/")
-                                .replace("test ", "")
-                                .replace('\\', "/"),
-                        );
+                        line = line
+                            .replace("test conformance::", "")
+                            .replace(" ... ok", "")
+                            .replace("::", "/")
+                            .replace("test ", "")
+                            .replace('\\', "/");
+                        line.push('\n');
+                        passed_test_lines.push(line);
                     }
                 }
             });
@@ -72,14 +73,8 @@ fn test_conformance() -> anyhow::Result<()> {
     let status = child.wait()?;
     ensure!(status.success(), "test conformance failed: {status}");
 
-    tests.sort();
-
-    use std::io::Write;
-    let mut file = std::fs::File::create("crates/stc_ts_type_checker/tests/conformance.pass.txt")?;
-    for line in &tests {
-        writeln!(file, "{line}").unwrap();
-    }
-    drop(file);
+    passed_test_lines.sort();
+    std::fs::write("crates/stc_ts_type_checker/tests/conformance.pass.txt", passed_test_lines.concat())?;
 
     Ok(())
 }
