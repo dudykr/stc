@@ -32,12 +32,6 @@
       48
     ]
   },
-  "extra_errors": {
-    "TS2430": 1
-  },
-  "extra_error_lines": {
-    "TS2430": [
-      49
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }
