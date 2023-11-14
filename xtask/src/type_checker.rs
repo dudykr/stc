@@ -54,27 +54,38 @@ fn test_conformance() -> anyhow::Result<()> {
                 let stdout = std::io::BufReader::new(stdout);
                 for line in stdout.lines() {
                     let mut line = line.unwrap();
-                    // fixme: there are some .tsx files...?
-                    if line.ends_with(".ts ... ok") {
-                        line = line
-                            .replace("test conformance::", "")
-                            .replace(" ... ok", "")
-                            .replace("::", "/")
-                            .replace("test ", "")
-                            .replace('\\', "/");
-                        line.push('\n');
-                        passed_test_lines.push(line);
+                    if line.starts_with("test ") {
+                        if line.ends_with(" ... ok") {
+                            line = line
+                                .replace("test conformance::", "")
+                                .replace(" ... ok", "")
+                                .replace("::", "/")
+                                .replace("test ", "")
+                                .replace('\\', "/");
+                            line.push('\n');
+                            passed_test_lines.push(line);
+                            eprint!(".");
+                        } else if line.ends_with(" ... FAILED") {
+                            eprint!("F");
+                        } else if line.ends_with(" ... ignored") {
+                            eprint!("i");
+                        } else {
+                            eprintln!();
+                            eprintln!("{line}");
+                        }
                     }
                 }
             });
         }
     });
+    eprintln!();
 
     let status = child.wait()?;
-    ensure!(status.success(), "test conformance failed: {status}");
 
     passed_test_lines.sort();
     std::fs::write("crates/stc_ts_type_checker/tests/conformance.pass.txt", passed_test_lines.concat())?;
+
+    ensure!(status.success(), "test conformance failed: {status}");
 
     Ok(())
 }
