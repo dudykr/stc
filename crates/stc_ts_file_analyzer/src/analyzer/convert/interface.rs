@@ -62,6 +62,11 @@ impl Analyzer<'_, '_> {
             };
 
             if let Err(err) = res {
+                if err.code() == 2304 {
+                    // TypeNotFound
+                    return;
+                }
+
                 self.storage.report(
                     ErrorKind::InvalidInterfaceInheritance {
                         span,
