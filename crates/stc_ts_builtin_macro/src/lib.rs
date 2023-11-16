@@ -33,9 +33,6 @@ pub fn builtin(_: proc_macro::TokenStream) -> proc_macro::TokenStream {
             add_dep("Es2018", "Es2017Full");
             add_dep("Es2019", "Es2018Full");
             add_dep("Es2020", "Es2019Full");
-            add_dep("Es2021", "Es2020Full");
-            add_dep("Es2022", "Es2021Full");
-            add_dep("Es2023", "Es2022Full");
         }
 
         let mut contents = HashMap::<String, String>::default();
