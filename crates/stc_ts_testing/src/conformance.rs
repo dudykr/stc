@@ -397,7 +397,6 @@ fn build_target(target: EsVersion, specified: bool, libs: &[Lib]) -> Vec<Lib> {
             EsVersion::Es2019 => Lib::load("es2019.full"),
             EsVersion::Es2021 => Lib::load("es2021.full"),
             EsVersion::Es2022 => Lib::load("es2022.full"),
-            EsVersion::Es2023 => Lib::load("es2023.full"),
             _ => Lib::load("es2022.full"),
         }
     } else if specified {
