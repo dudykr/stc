@@ -493,6 +493,7 @@ es2021/logicalAssignment/logicalAssignment2.ts
 es2021/logicalAssignment/logicalAssignment3.ts
 es2021/logicalAssignment/logicalAssignment8.ts
 es2021/logicalAssignment/logicalAssignment9.ts
+es2022/es2022IntlAPIs.ts
 es2022/es2022SharedMemory.ts
 es6/Symbols/symbolDeclarationEmit1.ts
 es6/Symbols/symbolDeclarationEmit10.ts

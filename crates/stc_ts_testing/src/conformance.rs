@@ -397,8 +397,6 @@ fn build_target(target: EsVersion, specified: bool, libs: &[Lib]) -> Vec<Lib> {
             EsVersion::Es2019 => Lib::load("es2019.full"),
             EsVersion::Es2021 => Lib::load("es2021.full"),
             EsVersion::Es2022 => Lib::load("es2022.full"),
-            // TODO(upstream): enable es2023
-            // EsVersion::Es2023 => Lib::load("es2023.full"),
             _ => Lib::load("es2022.full"),
         }
     } else if specified {
@@ -482,9 +480,7 @@ fn libs_with_deps(libs: &[Lib]) -> Vec<Lib> {
 
             Lib::Es2023 | Lib::Es2023Array | Lib::Es2023Full => add(libs, Lib::Es2023Full),
 
-            Lib::Esnext | Lib::EsnextFull | Lib::EsnextIntl | Lib::EsnextPromise | Lib::EsnextString | Lib::EsnextWeakref => {
-                add(libs, Lib::Es2022Full)
-            }
+            Lib::Esnext | Lib::EsnextFull | Lib::EsnextIntl => add(libs, Lib::Es2022Full),
 
             Lib::Dom
             | Lib::DomIterable
