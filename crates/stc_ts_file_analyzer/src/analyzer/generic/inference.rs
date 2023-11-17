@@ -1064,6 +1064,8 @@ impl Analyzer<'_, '_> {
         if let Some(constraint) = inferred.constraints.get(&name) {
             constraint.assert_clone_cheap();
 
+            dbg!(&constraint);
+            dbg!(&arg);
             if let Some(false) = self.extends(
                 span,
                 &arg,
@@ -1262,6 +1264,14 @@ impl Analyzer<'_, '_> {
         }
 
         let mut inferred = InferData::default();
+
+        for param in type_params {
+            dbg!(param);
+            if let Some(constraint) = &param.constraint {
+                constraint.assert_clone_cheap();
+                inferred.constraints.insert(param.name.clone(), *constraint.clone());
+            }
+        }
 
         self.infer_type(span, &mut inferred, param, arg, InferTypeOpts { ..opts })
             .context("tried to infer type using two type")?;
