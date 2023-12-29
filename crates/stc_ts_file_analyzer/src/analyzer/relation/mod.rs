@@ -25,6 +25,7 @@ impl Analyzer<'_, '_> {
         self.is_type_related_to_inner(&mut data, source, target, relation)
     }
 
+    #[allow(clippy::needless_pass_by_ref_mut)]
     fn is_type_related_to_inner(&mut self, data: &mut IsRelatedData, source: &Type, target: &Type, relation: Relation) -> bool {
         if source.type_eq(target) {
             return true;

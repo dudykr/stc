@@ -18,13 +18,6 @@
       45
     ]
   },
-  "extra_errors": {
-    "TS2304": 2
-  },
-  "extra_error_lines": {
-    "TS2304": [
-      44,
-      44
-    ]
-  }
+  "extra_errors": {},
+  "extra_error_lines": {}
 }

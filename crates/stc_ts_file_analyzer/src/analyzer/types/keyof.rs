@@ -5,8 +5,8 @@ use stc_ts_ast_rnode::{RIdent, RNumber, RStr, RTsEntityName, RTsLit};
 use stc_ts_errors::{debug::force_dump_type_as_string, DebugExt, ErrorKind};
 use stc_ts_type_ops::{is_str_lit_or_union, Fix};
 use stc_ts_types::{
-    Class, ClassMember, ClassProperty, Index, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature, Ref,
-    Type, TypeElement, Union,
+    Class, ClassMember, ClassProperty, Index, KeywordType, KeywordTypeMetadata, LitType, Method, MethodSignature, PropertySignature,
+    Readonly, Ref, Type, TypeElement, TypeParam,
 };
 use stc_utils::{cache::Freeze, ext::TypeVecExt, stack, try_cache};
 use swc_atoms::js_word;
@@ -67,6 +67,7 @@ impl Analyzer<'_, '_> {
             }
 
             match ty.normalize() {
+                Type::Readonly(Readonly { ty, .. }) => return self.keyof(span, ty),
                 Type::Lit(ty) => {
                     return self
                         .keyof(
@@ -89,32 +90,7 @@ impl Analyzer<'_, '_> {
                         .context("tried applying `keyof` to a literal by delegating to keyword type handler")
                 }
                 Type::Keyword(KeywordType { kind, .. }) => match kind {
-                    TsKeywordTypeKind::TsAnyKeyword => {
-                        let string = Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsStringKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
-                        let number = Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsNumberKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
-                        let symbol = Type::Keyword(KeywordType {
-                            span,
-                            kind: TsKeywordTypeKind::TsSymbolKeyword,
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        });
-                        return Ok(Type::Union(Union {
-                            span,
-                            types: vec![string, number, symbol],
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }));
-                    }
+                    TsKeywordTypeKind::TsAnyKeyword | TsKeywordTypeKind::TsNeverKeyword => return Ok(Type::get_any_key_type(span)),
                     TsKeywordTypeKind::TsVoidKeyword
                     | TsKeywordTypeKind::TsUndefinedKeyword
                     | TsKeywordTypeKind::TsNullKeyword
@@ -156,33 +132,6 @@ impl Analyzer<'_, '_> {
 
                     TsKeywordTypeKind::TsBigIntKeyword => {}
                     TsKeywordTypeKind::TsSymbolKeyword => {}
-                    TsKeywordTypeKind::TsNeverKeyword => {
-                        return Ok(Type::Union(Union {
-                            span,
-                            types: vec![
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsStringKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsNumberKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            ],
-                            metadata: Default::default(),
-                            tracker: Default::default(),
-                        }))
-                    }
                     TsKeywordTypeKind::TsIntrinsicKeyword => {}
                 },
 
@@ -297,6 +246,12 @@ impl Analyzer<'_, '_> {
                         .context("tried to get keys of Array (builtin)");
                 }
 
+                Type::This(this) => {
+                    if let Some(ty) = self.scope.this().map(Cow::into_owned) {
+                        return self.keyof(this.span, &ty);
+                    }
+                }
+
                 Type::Interface(..) | Type::Enum(..) => {
                     let ty = self
                         .convert_type_to_type_lit(span, ty.freezed(), Default::default())?
@@ -358,7 +313,10 @@ impl Analyzer<'_, '_> {
                     return Ok(Type::new_union(span, key_types));
                 }
 
-                Type::Param(..) => {
+                Type::Param(TypeParam { constraint, .. }) => {
+                    // if let Some(box c) = constraint {
+                    //     return self.keyof(span, c);
+                    // }
                     return Ok(Type::Index(Index {
                         span,
                         ty: Box::new(ty.into_owned()),
@@ -374,7 +332,46 @@ impl Analyzer<'_, '_> {
                         return Ok(ty.clone());
                     }
                 }
-
+                Type::EnumVariant(e) => {
+                    if e.name.is_none() && (e.def.has_num || e.def.has_str) {
+                        return self.keyof(
+                            span,
+                            &if e.def.has_num && e.def.has_str {
+                                Type::new_intersection(
+                                    span,
+                                    [
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsStringKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                        Type::Keyword(KeywordType {
+                                            span,
+                                            kind: TsKeywordTypeKind::TsNumberKeyword,
+                                            metadata: Default::default(),
+                                            tracker: Default::default(),
+                                        }),
+                                    ],
+                                )
+                            } else if e.def.has_num {
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                            } else {
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                })
+                            },
+                        );
+                    }
+                }
                 _ => {}
             }
 

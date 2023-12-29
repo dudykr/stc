@@ -1,6 +1,4 @@
-extern crate swc_node_base;
-
-use std::{path::PathBuf, sync::Arc, time::Instant};
+use std::{path::PathBuf, sync::Arc};
 
 use anyhow::Error;
 use clap::Parser;
@@ -13,6 +11,7 @@ use stc_ts_type_checker::{
     loader::{DefaultFileLoader, ModuleLoader},
     Checker,
 };
+use stc_utils::perf_timer::PerfTimer;
 use swc_common::{
     errors::{ColorConfig, EmitterWriter, Handler},
     FileName, Globals, SourceMap, GLOBALS,
@@ -33,7 +32,7 @@ enum Command {
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let start = Instant::now();
+    let timer = PerfTimer::log_info();
 
     env_logger::init();
 
@@ -57,18 +56,14 @@ async fn main() -> Result<(), Error> {
 
     rayon::ThreadPoolBuilder::new().build_global().unwrap();
 
-    {
-        let end = Instant::now();
-
-        log::info!("Initialization took {:?}", end - start);
-    }
+    timer.log("Initialization");
 
     let globals = Arc::<Globals>::default();
 
     match command {
         Command::Test(cmd) => {
             let libs = {
-                let start = Instant::now();
+                let timer = PerfTimer::log_info();
 
                 let mut libs = match cmd.libs {
                     Some(libs) => libs.iter().flat_map(|s| Lib::load(s)).collect::<Vec<_>>(),
@@ -77,9 +72,7 @@ async fn main() -> Result<(), Error> {
                 libs.sort();
                 libs.dedup();
 
-                let end = Instant::now();
-
-                log::info!("Loading builtin libraries took {:?}", end - start);
+                timer.log("Loading builtin libraries");
 
                 libs
             };
@@ -91,7 +84,7 @@ async fn main() -> Result<(), Error> {
             let path = PathBuf::from(cmd.file);
 
             {
-                let start = Instant::now();
+                let timer = PerfTimer::log_info();
 
                 let checker = Checker::new(
                     cm.clone(),
@@ -103,14 +96,11 @@ async fn main() -> Result<(), Error> {
 
                 checker.load_typings(&path, None, cmd.types.as_deref());
 
-                let end = Instant::now();
-
-                log::info!("Loading typing libraries took {:?}", end - start);
+                timer.log("Loading typing libraries");
             }
 
             let mut errors = vec![];
 
-            let start = Instant::now();
             GLOBALS.set(&globals, || {
                 let mut checker = Checker::new(
                     cm.clone(),
@@ -125,21 +115,18 @@ async fn main() -> Result<(), Error> {
                 errors.extend(checker.take_errors());
             });
 
-            let end = Instant::now();
-
-            log::info!("Checking took {:?}", end - start);
+            timer.log("Checking");
 
             {
-                let start = Instant::now();
+                let timer = PerfTimer::log_info();
+
                 for err in &errors {
                     err.emit(&handler);
                 }
 
-                let end = Instant::now();
-
                 log::info!("Found {} errors", errors.len());
 
-                log::info!("Error reporting took {:?}", end - start);
+                timer.log("Error reporting");
             }
         }
         Command::Lsp(cmd) => {
@@ -147,9 +134,7 @@ async fn main() -> Result<(), Error> {
         }
     }
 
-    let end = Instant::now();
-
-    log::info!("Done in {:?}", end - start);
+    timer.log("Done");
 
     Ok(())
 }

@@ -1,4 +1,4 @@
-use std::{borrow::Cow, cmp::min, collections::hash_map::Entry, mem::take, time::Instant};
+use std::{borrow::Cow, cmp::min, collections::hash_map::Entry, mem::take};
 
 use fxhash::{FxHashMap, FxHashSet};
 use itertools::{EitherOrBoth, Itertools};
@@ -6,7 +6,7 @@ use rnode::{Fold, FoldWith, VisitMut, VisitMutWith, VisitWith};
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RNumber, RPat, RTsEntityName, RTsLit};
 use stc_ts_errors::{
     debug::{dump_type_as_string, force_dump_type_as_string, print_backtrace, print_type},
-    DebugExt,
+    DebugExt, ErrorKind,
 };
 use stc_ts_generics::{
     expander::InferTypeResult,
@@ -21,7 +21,9 @@ use stc_ts_types::{
 use stc_ts_utils::MapWithMut;
 use stc_utils::{
     cache::{Freeze, ALLOW_DEEP_CLONE},
-    dev_span, stack,
+    dev_span,
+    perf_timer::PerfTimer,
+    stack,
 };
 use swc_atoms::js_word;
 use swc_common::{EqIgnoreSpan, Span, Spanned, SyntaxContext, TypeEq, DUMMY_SP};
@@ -109,12 +111,9 @@ impl Analyzer<'_, '_> {
         #[cfg(debug_assertions)]
         let _tracing = dev_span!("infer_arg_types");
 
-        warn!(
-            "infer_arg_types: {:?}",
-            type_params.iter().map(|p| format!("{}, ", p.name)).collect::<String>()
-        );
+        warn!("infer_arg_types: {:?}", type_params.iter().map(|p| &p.name).join(", "));
 
-        let start = Instant::now();
+        let timer = PerfTimer::noop();
 
         let mut inferred = InferData::default();
 
@@ -128,6 +127,11 @@ impl Analyzer<'_, '_> {
         if let Some(base) = base {
             for (param, type_param) in base.params.iter().zip(type_params) {
                 info!("User provided `{:?} = {:?}`", type_param.name, param.clone());
+
+                if self.validate_generic_argument(span, param, type_param) {
+                    break;
+                }
+
                 inferred.type_params.insert(
                     type_param.name.clone(),
                     InferenceInfo {
@@ -352,9 +356,7 @@ impl Analyzer<'_, '_> {
 
         let map = self.finalize_inference(span, type_params, inferred);
 
-        let end = Instant::now();
-
-        warn!("infer_arg_types is finished. (time = {:?})", end - start);
+        warn!("infer_arg_types is finished. (time = {:?})", timer.elapsed());
 
         Ok(map)
     }
@@ -2375,6 +2377,30 @@ impl Analyzer<'_, '_> {
         });
 
         Ok(())
+    }
+
+    /// ```ts
+    /// type A<T extends number> = 1;
+    /// A<string>;
+    /// ```
+    fn validate_generic_argument(&mut self, span: Span, param: &Type, type_param: &TypeParam) -> bool {
+        if let Some(tp) = &type_param.constraint {
+            if !param.span().is_dummy() && !param.is_type_param() {
+                if matches!(self.extends(span, param, tp, Default::default()), Some(false)) {
+                    self.storage.report(
+                        ErrorKind::NotSatisfyConstraint {
+                            span: param.span(),
+                            left: tp.clone(),
+                            right: Box::new(param.clone()),
+                        }
+                        .into(),
+                    );
+                    return true;
+                }
+            }
+        }
+
+        false
     }
 }
 

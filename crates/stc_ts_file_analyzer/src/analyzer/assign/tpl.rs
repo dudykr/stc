@@ -2,7 +2,7 @@
 
 use stc_ts_ast_rnode::RTsLit;
 use stc_ts_errors::{debug::force_dump_type_as_string, ErrorKind};
-use stc_ts_types::{IntrinsicKind, LitType, StringMapping, TplType, Type};
+use stc_ts_types::{IntrinsicKind, KeywordType, LitType, StringMapping, TplType, Type};
 use stc_utils::dev_span;
 use swc_common::{Span, TypeEq};
 use swc_ecma_ast::TsKeywordTypeKind;
@@ -27,6 +27,7 @@ impl Analyzer<'_, '_> {
     /// orders.
     ///
     /// After splitting, we can check if each element is assignable.
+    #[allow(clippy::needless_pass_by_ref_mut)]
     pub(crate) fn assign_to_tpl(&mut self, data: &mut AssignData, l: &TplType, r_ty: &Type, opts: AssignOpts) -> VResult<()> {
         let span = opts.span;
         let r_ty = r_ty.normalize();
@@ -76,7 +77,49 @@ impl Analyzer<'_, '_> {
 
                 // TODO: Check for `source`
                 match &*value.value {
-                    "true" | "false" | "null" | "undefined" => return Ok(true),
+                    "false" | "true" => {
+                        if let Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsBooleanKeyword,
+                            ..
+                        }) = &target.normalize()
+                        {
+                            return Ok(true);
+                        }
+                        if let Type::Union(u) = &target.normalize() {
+                            if u.types.iter().any(|x| x.is_bool()) {
+                                return Ok(true);
+                            }
+                        }
+                    }
+                    "null" => {
+                        if let Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsNullKeyword,
+                            ..
+                        }) = &target.normalize()
+                        {
+                            return Ok(true);
+                        }
+                        if let Type::Union(u) = &target.normalize() {
+                            if u.types.iter().any(|x| x.is_null()) {
+                                return Ok(true);
+                            }
+                        }
+                    }
+                    "undefined" => {
+                        if let Type::Keyword(KeywordType {
+                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
+                            ..
+                        }) = &target.normalize()
+                        {
+                            return Ok(true);
+                        }
+
+                        if let Type::Union(u) = &target.normalize() {
+                            if u.types.iter().any(|x| x.is_undefined()) {
+                                return Ok(true);
+                            }
+                        }
+                    }
                     _ => {}
                 }
 
@@ -92,9 +135,21 @@ impl Analyzer<'_, '_> {
             }
 
             Type::Tpl(source) => {
+                if source.quasis.len() == 1 && source.types.is_empty() {
+                    let ty = Type::Lit(LitType {
+                        span,
+                        lit: RTsLit::Str(source.quasis[0].clone().value.into()),
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    });
+
+                    return self.is_valid_type_for_tpl_lit_placeholder(span, &ty, target);
+                }
+
                 if source.quasis.len() == 2 && source.quasis[0].value == "" && source.quasis[1].value == "" {
                     // TODO(kdy1): Return `Ok(self.is_type_assignable_to(span, &source.types[0],
                     // target))` instead
+
                     if self.is_type_assignable_to(span, &source.types[0], target) {
                         return Ok(true);
                     }

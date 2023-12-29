@@ -62,7 +62,7 @@ impl From<ErrorKind> for Error {
 impl Error {
     #[track_caller]
     pub fn context(self, context: impl Display) -> Error {
-        return self.context_impl(Location::caller(), context);
+        self.context_impl(Location::caller(), context)
     }
 
     #[cfg_attr(not(debug_assertions), inline(always))]
@@ -1589,6 +1589,16 @@ pub enum ErrorKind {
     RestParamMustBeLast {
         span: Span,
     },
+
+    // TS2536
+    CannotBeUsedToIndexType {
+        span: Span,
+    },
+
+    // TS18016
+    PrivateIdentifiersAreNotAllowedOutsideClassBodies {
+        span: Span,
+    },
 }
 
 #[cfg(target_pointer_width = "64")]
@@ -2201,6 +2211,12 @@ impl ErrorKind {
 
             ErrorKind::RestParamMustBeLast { .. } => 1014,
 
+            ErrorKind::ImportFailed { .. } => 2305,
+
+            ErrorKind::CannotBeUsedToIndexType { .. } => 2536,
+
+            ErrorKind::PrivateIdentifiersAreNotAllowedOutsideClassBodies { .. } => 18016,
+
             _ => 0,
         }
     }
@@ -2232,6 +2248,10 @@ impl ErrorKind {
 
     pub fn is_type_not_found(&self) -> bool {
         matches!(self, Self::NoSuchType { .. } | Self::NoSuchTypeButVarExists { .. })
+    }
+
+    pub fn is_cannot_be_used_index_ty(&self) -> bool {
+        self.code() == 2536
     }
 
     #[cold]

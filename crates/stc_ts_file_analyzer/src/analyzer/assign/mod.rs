@@ -6,9 +6,9 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, Index, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, LitType, Mapped,
-    PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type, TypeElement, TypeLit,
-    TypeParam, Union,
+    Array, Conditional, EnumVariant, Index, IndexedAccessType, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, LitType,
+    Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type, TypeElement,
+    TypeLit, TypeParam, Union,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_atoms::js_word;
@@ -270,14 +270,11 @@ impl Analyzer<'_, '_> {
         let mut skip_check_null_or_undefined_of_rhs = false;
         match op {
             op!("*=") | op!("**=") | op!("/=") | op!("%=") | op!("-=") => {
-                if let Type::Keyword(KeywordType {
-                    kind: TsKeywordTypeKind::TsUndefinedKeyword | TsKeywordTypeKind::TsNullKeyword,
-                    ..
-                }) = rhs
-                {
+                if rhs.is_null_or_undefined() {
                     if op == op!("**=") {
                         skip_check_null_or_undefined_of_rhs = true;
                     }
+
                     if op != op!("**=") && !self.rule().strict_null_checks && (l.is_num() || l.is_enum_variant()) {
                         skip_check_null_or_undefined_of_rhs = true;
                     } else {
@@ -521,12 +518,72 @@ impl Analyzer<'_, '_> {
             }
         }
 
-        match ty {
+        match ty.normalize() {
             Type::EnumVariant(e @ EnumVariant { name: Some(..), .. }) => {
                 if opts.ignore_enum_variant_name {
                     return Ok(Cow::Owned(Type::EnumVariant(EnumVariant { name: None, ..e.clone() })));
                 }
             }
+            Type::IndexedAccessType(IndexedAccessType {
+                obj_type:
+                    obj @ box Type::Param(TypeParam {
+                        span: p_span,
+                        name,
+                        constraint,
+                        ..
+                    }),
+                index_type:
+                    box Type::Index(Index {
+                        ty:
+                            box Type::Param(TypeParam {
+                                constraint: None,
+                                default: None,
+                                name: rhs_param_name,
+                                ..
+                            }),
+                        ..
+                    }),
+                ..
+            }) if name.eq(rhs_param_name) => {
+                let create_index_accessed_type = |ty: Box<Type>, obj| {
+                    Type::IndexedAccessType(IndexedAccessType {
+                        span,
+                        readonly: false,
+                        obj_type: obj,
+                        index_type: ty,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                };
+
+                let gen_keyword_type = |kind| {
+                    Type::Keyword(KeywordType {
+                        span,
+                        kind,
+                        metadata: Default::default(),
+                        tracker: Default::default(),
+                    })
+                };
+
+                return Ok(Cow::Owned(Type::new_union(
+                    span,
+                    [
+                        create_index_accessed_type(
+                            Box::new(gen_keyword_type(TsKeywordTypeKind::TsStringKeyword)),
+                            Box::new(*obj.clone()),
+                        ),
+                        create_index_accessed_type(
+                            Box::new(gen_keyword_type(TsKeywordTypeKind::TsNumberKeyword)),
+                            Box::new(*obj.clone()),
+                        ),
+                        create_index_accessed_type(
+                            Box::new(gen_keyword_type(TsKeywordTypeKind::TsSymbolKeyword)),
+                            Box::new(*obj.clone()),
+                        ),
+                    ],
+                )));
+            }
+
             Type::Conditional(..)
             | Type::IndexedAccessType(..)
             | Type::Alias(..)
@@ -551,7 +608,6 @@ impl Analyzer<'_, '_> {
                         },
                     )?
                     .into_owned();
-
                 return Ok(Cow::Owned(ty));
             }
             _ => {}
@@ -580,7 +636,6 @@ impl Analyzer<'_, '_> {
         let _stack = stack::track(opts.span)?;
 
         data.dejavu.push((left.clone(), right.clone()));
-
         let res = self.assign_without_wrapping(data, left, right, opts).with_context(|| {
             //
             let l = force_dump_type_as_string(left);
@@ -1138,6 +1193,41 @@ impl Analyzer<'_, '_> {
                     };
                 }
             }
+            // function f3<T, U extends T>(x: T, y: U, k: keyof T) {
+            //     x[k] = y[k];
+            // }
+            (
+                Type::IndexedAccessType(IndexedAccessType {
+                    obj_type: box Type::Param(TypeParam { name: lhs_name, .. }),
+                    index_type: lhs_idx,
+                    ..
+                }),
+                Type::IndexedAccessType(IndexedAccessType {
+                    obj_type:
+                        box Type::Param(TypeParam {
+                            constraint: Some(box Type::Param(TypeParam { name: rhs_name, .. })),
+                            ..
+                        }),
+                    index_type: rhs_idx,
+                    ..
+                }),
+            ) if lhs_name.eq(rhs_name) && lhs_idx.is_index() && rhs_idx.is_index() => {
+                if matches!((
+                    lhs_idx.as_index().map(|ty| ty.ty.normalize()),
+                    rhs_idx.as_index().map(|ty| ty.ty.normalize()),
+                ), (
+                        Some(Type::Param(TypeParam {
+                            name: lhs_ty_param_name, ..
+                        })),
+                        Some(Type::Param(TypeParam {
+                            name: rhs_ty_param_name, ..
+                        })),
+                    ) if lhs_ty_param_name.eq(rhs_ty_param_name))
+                {
+                    return Ok(());
+                }
+            }
+
             _ => {}
         }
 
@@ -1984,10 +2074,23 @@ impl Analyzer<'_, '_> {
                 if results.iter().any(Result::is_ok) {
                     return Ok(());
                 }
+
+                if let Type::Param(TypeParam {
+                    constraint: Some(box c), ..
+                }) = rhs
+                {
+                    if let Ok(result) = self.normalize(Some(span), Cow::Borrowed(c), Default::default()) {
+                        return self
+                            .assign_with_opts(data, to, result.normalize(), opts)
+                            .context("tried to assign a type_param at union");
+                    }
+                }
+
                 let normalized = lu.types.iter().any(|ty| match ty.normalize() {
                     Type::TypeLit(ty) => ty.metadata.normalized,
                     _ => false,
                 });
+
                 let errors = results.into_iter().map(Result::unwrap_err).collect();
                 let should_use_single_error = normalized
                     || lu.types.iter().all(|ty| {
@@ -2003,6 +2106,7 @@ impl Analyzer<'_, '_> {
                             || ty.is_type_param()
                             || ty.is_class()
                             || ty.is_class_def()
+                            || ty.is_indexed_access_type()
                     });
 
                 if should_use_single_error {

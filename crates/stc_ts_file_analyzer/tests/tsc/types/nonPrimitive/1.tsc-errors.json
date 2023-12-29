@@ -1,0 +1,20 @@
+[
+  {
+    "file": "tests/tsc/types/nonPrimitive/1.ts",
+    "line": 5,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/types/nonPrimitive/1.ts",
+    "line": 8,
+    "col": 5,
+    "code": 2322
+  },
+  {
+    "file": "tests/tsc/types/nonPrimitive/1.ts",
+    "line": 11,
+    "col": 5,
+    "code": 2322
+  }
+]

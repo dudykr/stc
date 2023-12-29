@@ -19,7 +19,12 @@ impl Analyzer<'_, '_> {
                 Ok(Type::any(e.span, Default::default()))
             }
 
-            _ => {
+            MetaPropKind::ImportMeta => {
+                if let Ok(mut ty) = self.env.get_global_type(e.span(), &"ImportMeta".into()) {
+                    ty.reposition(e.span());
+                    return Ok(ty);
+                }
+
                 todo!("Unsupported meta property {:?}", e)
             }
         }

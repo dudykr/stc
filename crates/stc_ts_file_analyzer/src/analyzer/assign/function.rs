@@ -903,9 +903,7 @@ impl Analyzer<'_, '_> {
             let l = li.next();
             let r = ri.next();
 
-            let (Some(l), Some(r)) = (l, r) else {
-                break
-            };
+            let (Some(l), Some(r)) = (l, r) else { break };
 
             // TODO(kdy1): What should we do?
             if opts.allow_assignment_to_param {

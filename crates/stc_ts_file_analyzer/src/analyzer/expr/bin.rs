@@ -6,8 +6,8 @@ use std::{
 
 use fxhash::FxHashMap;
 use stc_ts_ast_rnode::{
-    RBinExpr, RBindingIdent, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase, ROptChainExpr, RPat,
-    RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
+    RBinExpr, RBindingIdent, RCallExpr, RCallee, RComputedPropName, RExpr, RIdent, RLit, RMemberExpr, RMemberProp, ROptChainBase,
+    ROptChainExpr, RPat, RPatOrExpr, RStr, RTpl, RTsEntityName, RTsLit, RUnaryExpr,
 };
 use stc_ts_errors::{DebugExt, ErrorKind, Errors};
 use stc_ts_file_analyzer_macros::extra_validator;
@@ -300,7 +300,7 @@ impl Analyzer<'_, '_> {
         match op {
             op!("===") | op!("!==") | op!("==") | op!("!=") => {
                 let is_eq = op == op!("===") || op == op!("==");
-
+                let is_strict = op == op!("===") || op == op!("!==");
                 self.add_type_facts_for_typeof(span, left, right, is_eq, &lt, &rt)
                     .report(&mut self.storage);
 
@@ -345,15 +345,10 @@ impl Analyzer<'_, '_> {
                     }
                     _ => None,
                 }) {
-                    let ty = ty.clone().freezed();
-                    if is_eq {
-                        self.add_deep_type_fact(span, name, ty, true);
-                    } else {
-                        self.add_deep_type_fact(span, name, ty, false);
-                    }
+                    self.add_deep_type_fact(span, name, ty.clone().freezed(), is_eq);
                 }
 
-                self.add_type_facts_for_opt_chains(span, left, right, &lt, &rt)
+                self.add_type_facts_for_opt_chains(span, left, right, &lt, &rt, is_eq, is_strict)
                     .report(&mut self.storage);
 
                 if let Some((l, r_ty)) = c.take_if_any_matches(|(l, _), (_, r_ty)| match (l, r_ty) {
@@ -388,12 +383,12 @@ impl Analyzer<'_, '_> {
                         let mut is_loose_comparison_with_null_or_undefined = false;
                         match op {
                             op!("==") | op!("!=") => {
-                                if r.is_null() | r.is_undefined() {
+                                if r.is_null_or_undefined() {
                                     is_loose_comparison_with_null_or_undefined = true;
                                     let eq = TypeFacts::EQUndefinedOrNull | TypeFacts::EQNull | TypeFacts::EQUndefined;
                                     let neq = TypeFacts::NEUndefinedOrNull | TypeFacts::NENull | TypeFacts::NEUndefined;
 
-                                    if op == op!("==") {
+                                    if is_eq {
                                         *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
                                         *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
                                     } else {
@@ -402,60 +397,36 @@ impl Analyzer<'_, '_> {
                                     }
                                 }
                             }
-                            op!("===") => {
-                                if r.is_null() {
-                                    let eq = TypeFacts::EQNull;
-                                    let neq = TypeFacts::NENull;
-
-                                    if op == op!("===") {
-                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
-                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
-                                    } else {
-                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
-                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
-                                    }
-                                } else if r.is_undefined() {
-                                    let eq = TypeFacts::EQUndefined;
-                                    let neq = TypeFacts::NEUndefined;
-
-                                    if op == op!("===") {
-                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= eq;
-                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= neq;
-                                    } else {
-                                        *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= neq;
-                                        *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= eq;
-                                    }
-                                }
+                            op!("===") if r.is_null() => {
+                                *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= TypeFacts::EQNull;
+                                *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= TypeFacts::NENull;
+                            }
+                            op!("===") if r.is_undefined() => {
+                                *self.cur_facts.true_facts.facts.entry(name.clone()).or_default() |= TypeFacts::EQUndefined;
+                                *self.cur_facts.false_facts.facts.entry(name.clone()).or_default() |= TypeFacts::NEUndefined;
                             }
                             _ => (),
                         }
-                        let additional_target = if lt.metadata().destructure_key.0 > 0 {
-                            let origin_ty = self.find_destructor(lt.metadata().destructure_key);
-                            if let Some(ty) = origin_ty {
-                                let ty = ty.into_owned();
-                                self.get_additional_exclude_target(span, ty, &r, name.clone(), is_loose_comparison_with_null_or_undefined)
-                            } else {
-                                Default::default()
+
+                        let additional_target = 'target: {
+                            let key = lt.metadata().destructure_key;
+                            if key.0 > 0 {
+                                if let Some(ty) = self.find_destructor(key) {
+                                    break 'target self.get_additional_exclude_target(
+                                        span,
+                                        ty.into_owned(),
+                                        &r,
+                                        name.clone(),
+                                        is_loose_comparison_with_null_or_undefined,
+                                    );
+                                }
                             }
-                        } else {
+
                             Default::default()
                         };
 
                         let exclude_types = if is_loose_comparison_with_null_or_undefined {
-                            vec![
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsNullKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                                Type::Keyword(KeywordType {
-                                    span,
-                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }),
-                            ]
+                            Type::null_and_undefined(span, Default::default())
                         } else {
                             exclude.freezed()
                         };
@@ -482,17 +453,9 @@ impl Analyzer<'_, '_> {
                                 .entry(name.clone())
                                 .or_default()
                                 .extend(exclude_types);
-                            for (name, exclude_type) in additional_target.iter() {
-                                self.cur_facts
-                                    .false_facts
-                                    .excludes
-                                    .entry(name.clone())
-                                    .or_default()
-                                    .extend(exclude_type.clone());
-                            }
                         }
 
-                        r = if let Type::Param(TypeParam {
+                        if let Type::Param(TypeParam {
                             span: param_span,
                             constraint: Some(param),
                             name: param_name,
@@ -502,7 +465,7 @@ impl Analyzer<'_, '_> {
                         }) = c.left.1.normalize()
                         {
                             if param.is_unknown() || param.is_any() {
-                                Type::Param(TypeParam {
+                                r = Type::Param(TypeParam {
                                     span: *param_span,
                                     constraint: Some(Box::new(Type::Keyword(KeywordType {
                                         span: *param_span,
@@ -515,18 +478,15 @@ impl Analyzer<'_, '_> {
                                     metadata: *metadata,
                                     tracker: Default::default(),
                                 })
-                            } else {
-                                r
                             }
-                        } else {
-                            r
                         };
+
                         self.add_deep_type_fact(span, name, r, is_eq);
-                        for (name, exclude_type) in additional_target.iter() {
-                            for exclude in exclude_type.iter() {
-                                self.add_deep_type_fact(span, name.clone(), exclude.clone(), is_eq);
-                            }
-                        }
+                        additional_target.iter().for_each(|(name, exclude_type)| {
+                            exclude_type
+                                .iter()
+                                .for_each(|exclude| self.add_deep_type_fact(span, name.clone(), exclude.clone(), is_eq));
+                        });
                     }
                 }
             }
@@ -1047,56 +1007,49 @@ impl Analyzer<'_, '_> {
                             // A type guard of the form typeof x === s and typeof x !== s,
                             // where s is a string literal with any value but 'string', 'number' or
                             // 'boolean'
+                            let default_extends_type = vec![
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsStringKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsBooleanKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                                Type::Keyword(KeywordType {
+                                    span,
+                                    kind: TsKeywordTypeKind::TsNumberKeyword,
+                                    metadata: Default::default(),
+                                    tracker: Default::default(),
+                                }),
+                            ];
+
                             let name = Name::try_from(&**arg).unwrap();
 
                             if is_eq {
                                 //  - typeof x === s
                                 //  removes the primitive types string, number, and boolean from
                                 //  the type of x in true facts.
-                                self.cur_facts.true_facts.excludes.entry(name).or_default().extend(vec![
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsStringKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                ]);
+                                self.cur_facts
+                                    .true_facts
+                                    .excludes
+                                    .entry(name)
+                                    .or_default()
+                                    .extend(default_extends_type);
                             } else {
                                 //  - typeof x !== s
                                 //  removes the primitive types string, number, and boolean from
                                 //  the type of x in false facts.
-                                self.cur_facts.false_facts.excludes.entry(name).or_default().extend(vec![
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsStringKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsBooleanKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                ]);
+                                self.cur_facts
+                                    .false_facts
+                                    .excludes
+                                    .entry(name)
+                                    .or_default()
+                                    .extend(default_extends_type);
                             }
                             None
                         }
@@ -1151,7 +1104,16 @@ impl Analyzer<'_, '_> {
     ///
     /// The condition in the if statement above will be `true` if `f.geometry`
     /// is `undefined`.
-    fn add_type_facts_for_opt_chains(&mut self, span: Span, l: &RExpr, r: &RExpr, lt: &Type, rt: &Type) -> VResult<()> {
+    fn add_type_facts_for_opt_chains(
+        &mut self,
+        span: Span,
+        l: &RExpr,
+        r: &RExpr,
+        lt: &Type,
+        rt: &Type,
+        is_eq: bool,
+        is_strict: bool,
+    ) -> VResult<()> {
         /// Convert expression to names.
         ///
         /// This may return multiple names if there are optional chaining
@@ -1165,6 +1127,23 @@ impl Analyzer<'_, '_> {
                     let mut names = non_undefined_names(&me.obj);
 
                     names.extend(e.try_into().ok());
+                    names
+                }
+
+                RExpr::Call(RCallExpr {
+                    callee: RCallee::Expr(c), ..
+                }) => {
+                    let mut names = non_undefined_names(c);
+                    names.extend(e.try_into().ok());
+
+                    names
+                }
+
+                RExpr::Ident(..) => {
+                    let mut names: Vec<Name> = vec![];
+
+                    names.extend(e.try_into().ok());
+
                     names
                 }
 
@@ -1208,8 +1187,24 @@ impl Analyzer<'_, '_> {
             }
         }) {
             if !self.can_be_undefined(span, r_ty, false)? {
-                for name in names {
-                    self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
+                if !is_eq {
+                    for name in names {
+                        self.cur_facts.false_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
+                    }
+                } else if is_strict {
+                    for name in names {
+                        self.cur_facts.true_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
+                    }
+                }
+            } else if r_ty.is_undefined() && !is_eq {
+                if is_strict {
+                    for name in names {
+                        self.cur_facts.true_facts.facts.insert(name.clone(), TypeFacts::NEUndefined);
+                    }
+                } else {
+                    for name in names {
+                        self.cur_facts.true_facts.facts.insert(name.clone(), TypeFacts::NEUndefinedOrNull);
+                    }
                 }
             }
         }
@@ -1219,9 +1214,6 @@ impl Analyzer<'_, '_> {
     }
 
     fn can_compare_with_eq(&mut self, span: Span, disc_ty: &Type, case_ty: &Type) -> VResult<bool> {
-        let disc_ty = disc_ty.normalize();
-        let case_ty = case_ty.normalize();
-
         if disc_ty.type_eq(case_ty) {
             return Ok(true);
         }
@@ -1230,10 +1222,8 @@ impl Analyzer<'_, '_> {
             return Ok(false);
         }
 
-        if self.ctx.in_switch_case_test {
-            if disc_ty.is_intersection() {
-                return Ok(true);
-            }
+        if self.ctx.in_switch_case_test && disc_ty.is_intersection() {
+            return Ok(true);
         }
 
         self.has_overlap(
@@ -1913,16 +1903,7 @@ impl Analyzer<'_, '_> {
             let actual = name.slice_to(name.len() - 1);
 
             if has_undefined && candidates.is_empty() {
-                return Ok((
-                    actual,
-                    Type::Keyword(KeywordType {
-                        span: u.span,
-                        kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                        metadata: Default::default(),
-                        tracker: Default::default(),
-                    }),
-                    excluded.freezed(),
-                ));
+                return Ok((actual, Type::undefined(span, Default::default()), excluded.freezed()));
             }
             let ty = Type::new_union(span, candidates).freezed();
             return Ok((actual, ty, excluded.freezed()));
@@ -2091,32 +2072,7 @@ impl Analyzer<'_, '_> {
                     ty => {
                         if let Err(err) = self.assign_with_opts(
                             &mut Default::default(),
-                            &Type::Union(Union {
-                                span,
-                                types: vec![
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsStringKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsNumberKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                    Type::Keyword(KeywordType {
-                                        span,
-                                        kind: TsKeywordTypeKind::TsSymbolKeyword,
-                                        metadata: Default::default(),
-                                        tracker: Default::default(),
-                                    }),
-                                ],
-                                metadata: Default::default(),
-                                tracker: Default::default(),
-                            })
-                            .freezed(),
+                            &Type::get_any_key_type(span),
                             ty,
                             AssignOpts {
                                 span: ls,
@@ -2344,20 +2300,7 @@ impl Analyzer<'_, '_> {
                                         temp_vec.clone()
                                     } else {
                                         if is_loose_comparison {
-                                            vec![
-                                                Type::Keyword(KeywordType {
-                                                    span,
-                                                    kind: TsKeywordTypeKind::TsNullKeyword,
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                }),
-                                                Type::Keyword(KeywordType {
-                                                    span,
-                                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                                    metadata: Default::default(),
-                                                    tracker: Default::default(),
-                                                }),
-                                            ]
+                                            Type::null_and_undefined(span, Default::default())
                                         } else {
                                             vec![]
                                         }
@@ -2408,20 +2351,7 @@ impl Analyzer<'_, '_> {
                                 temp_vec.clone()
                             } else {
                                 if is_loose_comparison {
-                                    vec![
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsNullKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                        Type::Keyword(KeywordType {
-                                            span,
-                                            kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                            metadata: Default::default(),
-                                            tracker: Default::default(),
-                                        }),
-                                    ]
+                                    Type::null_and_undefined(span, Default::default())
                                 } else {
                                     vec![]
                                 }

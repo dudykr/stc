@@ -1,8 +1,5 @@
 #![feature(never_type)]
 
-/// Use good memory allocator.
-extern crate swc_node_base;
-
 use std::{
     collections::{HashMap, HashSet},
     env, fmt,
@@ -18,6 +15,7 @@ pub mod cache;
 pub mod error;
 pub mod ext;
 pub mod panic_context;
+pub mod perf_timer;
 pub mod stack;
 
 pub type ABuilderHasher = ahash::RandomState;

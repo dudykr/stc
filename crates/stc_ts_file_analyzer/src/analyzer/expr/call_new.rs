@@ -349,6 +349,13 @@ impl Analyzer<'_, '_> {
                 //     })
                 //     .into());
                 // }
+                if self.env.target().eq(&swc_ecma_ast::EsVersion::Es5) {
+                    Err(ErrorKind::NoSuchType {
+                        span: i.span(),
+                        name: i.into(),
+                    })?
+                }
+
                 Err(ErrorKind::UndefinedSymbol {
                     sym: i.into(),
                     span: i.span(),
@@ -520,8 +527,8 @@ impl Analyzer<'_, '_> {
                         let types = u
                             .types
                             .iter()
-                            .cloned()
                             .filter(|callee| !matches!(callee.normalize(), Type::Module(..) | Type::Namespace(..)))
+                            .cloned()
                             .collect::<Vec<_>>();
 
                         match types.len() {
@@ -3451,6 +3458,7 @@ impl Analyzer<'_, '_> {
     ///
     /// should make type of `subscriber` `SafeSubscriber`, not `Subscriber`.
     /// I (kdy1) don't know why.
+    #[allow(clippy::needless_pass_by_ref_mut)]
     fn add_call_facts(&mut self, params: &[FnParam], args: &[RExprOrSpread], ret_ty: &mut Type) {
         if !self.ctx.in_cond {
             return;

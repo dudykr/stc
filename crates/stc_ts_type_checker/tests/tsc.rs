@@ -16,7 +16,7 @@ use std::{
     sync::Arc,
 };
 
-use anyhow::{Context, Error};
+use anyhow::{bail, Context, Error};
 use indexmap::IndexMap;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
@@ -300,12 +300,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
         },
     };
 
-    let main_src = Arc::new(fs::read_to_string(file_name).unwrap());
-    // Postpone multi-file tests.
-    if main_src.contains("<reference path") {
-        panic!("`<reference path` is not supported yet");
-    }
-
     let mut stats = Stats::default();
     dbg!(&libs);
     for err in &mut expected_errors {
@@ -318,7 +312,6 @@ fn do_test(file_name: &Path, spec: TestSpec, use_target: bool) -> Result<(), Std
             if is_file_similar(err.file.as_deref(), Some(last)) {
                 // If this is the last file, we have to shift the errors.
                 err.line += err_shift_n;
-            } else {
             }
         } else {
             // If sub files is empty, it means that it's a single-file test, and
@@ -606,7 +599,27 @@ impl Resolve for TestFileSystem {
             return Ok(FileName::Real(filename.into()));
         }
 
-        todo!("resolve: current = {:?}; target ={:?}", base, module_specifier);
+        if module_specifier == "." {
+            let path = PathBuf::from(base.to_string());
+            match path.parent() {
+                Some(cur_dir) => {
+                    for (name, _) in self.files.iter() {
+                        if format!("{}/index.ts", cur_dir.display()) == *name || format!("{}/index.tsx", cur_dir.display()) == *name {
+                            return Ok(FileName::Real(name.into()));
+                        }
+                    }
+                }
+                None => {
+                    for (name, _) in self.files.iter() {
+                        if "index.ts" == *name || "index.tsx" == *name {
+                            return Ok(FileName::Real(name.into()));
+                        }
+                    }
+                }
+            }
+        }
+
+        bail!("resolve: current = {:?}; target ={:?}", base, module_specifier);
     }
 }
 
@@ -642,7 +655,7 @@ impl LoadFile for TestFileSystem {
             }
         }
 
-        todo!("load_file: {:?} ", filename);
+        bail!("not found module");
     }
 }
 

@@ -1900,6 +1900,35 @@ impl Type {
             _ => None,
         }
     }
+
+    pub fn get_any_key_type(span: Span) -> Type {
+        let string = Type::Keyword(KeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsStringKeyword,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        });
+        let number = Type::Keyword(KeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsNumberKeyword,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        });
+        let symbol = Type::Keyword(KeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsSymbolKeyword,
+            metadata: Default::default(),
+            tracker: Default::default(),
+        });
+
+        Type::Union(Union {
+            span,
+            types: vec![string, number, symbol],
+            metadata: Default::default(),
+            tracker: Default::default(),
+        })
+        .freezed()
+    }
 }
 
 impl Type {
@@ -1957,6 +1986,19 @@ impl Type {
         Type::Keyword(KeywordType {
             span,
             kind: TsKeywordTypeKind::TsNeverKeyword,
+            metadata,
+            tracker: Default::default(),
+        })
+    }
+
+    pub fn null_and_undefined(span: Span, metadata: KeywordTypeMetadata) -> Vec<Self> {
+        vec![Self::null(span, metadata), Self::undefined(span, metadata)]
+    }
+
+    pub fn null(span: Span, metadata: KeywordTypeMetadata) -> Self {
+        Type::Keyword(KeywordType {
+            span,
+            kind: TsKeywordTypeKind::TsNullKeyword,
             metadata,
             tracker: Default::default(),
         })

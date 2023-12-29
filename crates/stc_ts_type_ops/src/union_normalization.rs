@@ -6,8 +6,8 @@ use rustc_hash::FxHashMap;
 use stc_ts_ast_rnode::{RBindingIdent, RIdent, RPat};
 use stc_ts_generics::type_param::replacer::TypeParamReplacer;
 use stc_ts_types::{
-    CallSignature, FnParam, Function, FunctionMetadata, Key, KeywordType, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata,
-    TypeParamDecl, Union,
+    CallSignature, FnParam, Function, FunctionMetadata, Key, PropertySignature, Type, TypeElement, TypeLit, TypeLitMetadata, TypeParamDecl,
+    Union,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::TypeVecExt};
 use swc_atoms::JsWord;
@@ -357,12 +357,7 @@ impl ObjectUnionNormalizer {
                                 },
                                 optional: true,
                                 params: Default::default(),
-                                type_ann: Some(Box::new(Type::Keyword(KeywordType {
-                                    span: DUMMY_SP,
-                                    kind: TsKeywordTypeKind::TsUndefinedKeyword,
-                                    metadata: Default::default(),
-                                    tracker: Default::default(),
-                                }))),
+                                type_ann: Some(Box::new(Type::undefined(DUMMY_SP, Default::default()))),
                                 type_params: Default::default(),
                                 metadata: Default::default(),
                                 accessor: Default::default(),
