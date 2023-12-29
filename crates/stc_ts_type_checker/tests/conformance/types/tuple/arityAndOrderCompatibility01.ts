@@ -1,16 +1,16 @@
-interface StrNum extends Array<string | number> {
-  0: string;
-  1: number;
-  length: 2;
+interface StrNum extends Array<string|number> {
+    0: string;
+    1: number;
+    length: 2;
 }
 
 var x: [string, number];
-var y: StrNum;
+var y: StrNum
 var z: {
-  0: string;
-  1: number;
-  length: 2;
-};
+    0: string;
+    1: number;
+    length: 2;
+}
 
 var [a, b, c] = x;
 var [d, e, f] = y;
@@ -33,8 +33,3 @@ var n3: [number, string] = z;
 var o1: [string, number] = x;
 var o2: [string, number] = y;
 var o3: [string, number] = y;
-
-x = y;
-y = x;
-y = z;
-z = y;
