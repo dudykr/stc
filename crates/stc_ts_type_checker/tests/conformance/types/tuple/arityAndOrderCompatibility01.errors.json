@@ -100,11 +100,5 @@
     "line": 32,
     "column": 5,
     "code": "TS2322"
-  },
-  {
-    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility01.ts",
-    "line": 39,
-    "column": 5,
-    "code": "TS2740"
   }
 ]
