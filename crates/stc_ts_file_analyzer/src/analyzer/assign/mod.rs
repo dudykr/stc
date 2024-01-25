@@ -1578,6 +1578,24 @@ impl Analyzer<'_, '_> {
                         }
                     }
 
+                    if let RTsLit::Number(_) = &lhs.lit {
+                        if let Type::Keyword(KeywordType {
+                            span,
+                            kind,
+                            metadata:
+                                KeywordTypeMetadata {
+                                    common: CommonTypeMetadata { resolved_from_var, .. },
+                                    ..
+                                },
+                            tracker,
+                        }) = rhs
+                        {
+                            if let (TsKeywordTypeKind::TsNumberKeyword, true) = (kind, resolved_from_var) {
+                                return Ok(());
+                            }
+                        }
+                    }
+
                     fail!()
                 }
             },
