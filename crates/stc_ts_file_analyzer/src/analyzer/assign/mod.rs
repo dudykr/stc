@@ -8,7 +8,7 @@ use stc_ts_errors::{
 use stc_ts_types::{
     Array, Conditional, EnumVariant, Index, IndexedAccessType, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, LitType,
     Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeParam, Union,
+    TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_atoms::js_word;
@@ -1176,23 +1176,6 @@ impl Analyzer<'_, '_> {
                 return Ok(());
             }
 
-            (Type::Interface(Interface { extends, .. }), Type::Tuple(Tuple { elems, .. })) => {
-                for parent in extends {
-                    let rhs = self
-                        .type_of_ts_entity_name(span, &parent.expr, parent.type_args.as_deref())?
-                        .freezed();
-                    if let Some(Array { elem_type, .. }) = rhs.array() {
-                        if let Some(Union { types: rhs_types, .. }) = elem_type.union_type() {
-                            let lhs_types = elems.iter().map(|TupleElement { ty, .. }| ty);
-                            for (lhs, rhs) in lhs_types.zip(rhs_types.iter()) {
-                                if let (Some(_), Some(_)) = (lhs.clone().keyword(), rhs.clone().keyword()) {
-                                    return self.assign_with_opts(data, lhs, rhs, opts);
-                                }
-                            }
-                        }
-                    };
-                }
-            }
             // function f3<T, U extends T>(x: T, y: U, k: keyof T) {
             //     x[k] = y[k];
             // }
