@@ -1,0 +1,14 @@
+[
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility02.ts",
+    "line": 16,
+    "column": 0,
+    "code": "TS2322"
+  },
+  {
+    "filename": "tests/cases/conformance/types/tuple/arityAndOrderCompatibility02.ts",
+    "line": 18,
+    "column": 0,
+    "code": "TS2740"
+  }
+]

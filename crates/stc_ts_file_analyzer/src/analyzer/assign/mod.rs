@@ -6,9 +6,9 @@ use stc_ts_errors::{
     DebugExt, ErrorKind,
 };
 use stc_ts_types::{
-    Array, Conditional, EnumVariant, Index, IndexedAccessType, Instance, Interface, Intersection, IntrinsicKind, Key, KeywordType, LitType,
-    Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType, Tuple, TupleElement, Type, TypeElement,
-    TypeLit, TypeParam,
+    Array, CommonTypeMetadata, Conditional, EnumVariant, Index, IndexedAccessType, Instance, Interface, Intersection, IntrinsicKind, Key,
+    KeywordType, KeywordTypeMetadata, LitType, Mapped, PropertySignature, QueryExpr, QueryType, Readonly, Ref, StringMapping, ThisType,
+    Tuple, TupleElement, Type, TypeElement, TypeLit, TypeParam,
 };
 use stc_utils::{cache::Freeze, dev_span, ext::SpanExt, stack};
 use swc_atoms::js_word;
@@ -1156,6 +1156,15 @@ impl Analyzer<'_, '_> {
         }
 
         match (to, rhs) {
+            (
+                Type::Tuple(Tuple { elems, .. }),
+                Type::TypeLit(TypeLit {
+                    span,
+                    members,
+                    metadata,
+                    tracker,
+                }),
+            ) => fail!(),
             (_, Type::Conditional(rc)) => {
                 let new_true_ty = self.overwrite_conditional(span, rc);
 
@@ -1568,6 +1577,25 @@ impl Analyzer<'_, '_> {
                             }
                         }
                     }
+
+                    if let RTsLit::Number(_) = &lhs.lit {
+                        if let Type::Keyword(KeywordType {
+                            span,
+                            kind,
+                            metadata:
+                                KeywordTypeMetadata {
+                                    common: CommonTypeMetadata { resolved_from_var, .. },
+                                    ..
+                                },
+                            tracker,
+                        }) = rhs
+                        {
+                            if let (TsKeywordTypeKind::TsNumberKeyword, true) = (kind, resolved_from_var) {
+                                return Ok(());
+                            }
+                        }
+                    }
+
                     fail!()
                 }
             },
